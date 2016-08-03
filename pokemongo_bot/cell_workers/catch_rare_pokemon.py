@@ -70,12 +70,20 @@ class CatchRarePokemon(BaseTask):
                 key = rare_pokemon['location'] + "-" + rare_pokemon['name']
                 hash[key] = rare_pokemon
 
+        trimmed_rare_pokemons = []
         rare_pokemons = hash.values()
+        for rare_pokemon in rare_pokemons:
+            trimmed_rare_pokemons.append({
+                'id': rare_pokemon['id'],
+                'name': rare_pokemon['name'],
+                'location': rare_pokemon['location'],
+                'expire': rare_pokemon['expire']
+            })
 
         # Update file with active pokemons
         if self.should_clean:
             with open(self.bot_file, 'w') as outfile:
-                json.dump(rare_pokemons, outfile)
+                json.dump(trimmed_rare_pokemons, outfile)
 
         # sort by distance - to do catch S rank first
         rare_pokemons.sort(key=lambda x: x['seconds_left_to_catch'])
