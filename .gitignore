@@ -102,6 +102,7 @@ web/
 data/last-location*.json
 data/cells-*.json
 data/rare_pokemons.json
+data/map-caught-*.json
 
 # Multiple config
 configs/*
@@ -110,6 +111,7 @@ configs/*
 !configs/config.json.pokemons.example
 !configs/config.json.pokemon.example
 !configs/config.json.path.example
+!configs/config.json.map.example
 !configs/path.example.json
 !config.json.cluster.example
 
