@@ -11,6 +11,22 @@ from pokemongo_bot.cell_workers.catch_visible_pokemon import CatchVisiblePokemon
 from utils import distance, format_dist, format_time
 from pokemongo_bot.human_behaviour import action_delay
 
+'''
+Expects data/rare_pokemons.json to have the following format:
+[
+	{
+	    "id": 139,
+		"name": "Dragonite",
+		"location": "37.713724, -122.4284539",
+		"expire": "2016-08-02T01:12:57.807680"
+	},
+	{
+		"name": "Electabuzz",
+		"location": "37.759540, -122.4180126",
+		"expire": "2016-08-02T01:18:57.807680"
+	}
+]
+'''
 class CatchRarePokemon(BaseTask):
 
     def initialize(self):
