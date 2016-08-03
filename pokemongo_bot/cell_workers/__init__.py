@@ -2,6 +2,7 @@
 
 from catch_lured_pokemon import CatchLuredPokemon
 from catch_visible_pokemon import CatchVisiblePokemon
+from catch_rare_pokemon import CatchRarePokemon
 from evolve_all import EvolveAll
 from incubate_eggs import IncubateEggs
 from move_to_fort import MoveToFort
