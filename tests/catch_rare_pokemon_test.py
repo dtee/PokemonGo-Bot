@@ -24,6 +24,8 @@ class TestCatchRarePokemon(unittest.TestCase):
         self.lat, self.lng, self.alt = 0, 0, 0
 
         def default_config(*args, **kwargs):
+            if args[0] == 'should_clean':
+                return False
             if args[0] == 'bot_file':
                 return 'data/rare_pokemons.json.example'
             return args[1]

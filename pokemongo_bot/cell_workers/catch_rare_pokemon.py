@@ -1,6 +1,7 @@
 import json
 import dateutil.parser
 import os.path
+import dateutil.parser
 
 from datetime import datetime
 from pokemongo_bot import logger
@@ -16,6 +17,7 @@ class CatchRarePokemon(BaseTask):
         self.max_distance = self.config.get("max_distance", 1000)
         self.max_speed = self.config.get("max_speed", 104)
         self.bot_file = self.config.get('bot_file', 'data/rare_pokemons.json')
+        self.should_clean = self.config.get('clean_bot_file', True)
 
     def load_rare_list(self):
         if not os.path.isfile(self.bot_file):
@@ -24,6 +26,23 @@ class CatchRarePokemon(BaseTask):
 
         with open(self.bot_file) as f:
             rare_pokemons = json.load(f)
+
+        # Get Rid of expired pokemons
+        def is_valid(pokemon):
+            expire_time = dateutil.parser.parse(pokemon['expire'])
+            return expire_time > datetime.now()
+
+        # Dedup
+        hash = {}
+        for rare_pokemon in rare_pokemons:
+            key = rare_pokemon['location'] + "-" + rare_pokemon['name']
+            hash[key] = rare_pokemon
+        rare_pokemons = hash.values()
+
+        # Update file with active pokemons
+        if self.should_clean:
+            with open(self.bot_file, 'w') as outfile:
+                json.dump(rare_pokemons, outfile)
 
         return rare_pokemons
 
@@ -105,7 +124,7 @@ class CatchRarePokemon(BaseTask):
                     'seconds_left_to_catch': seconds_left_to_catch
                 }
             else:
-                logger.log('Too late to reach {}'.format(pokemon_name))
+                logger.log('[-] Too late to reach {}'.format(pokemon_name))
 
         return None
 
