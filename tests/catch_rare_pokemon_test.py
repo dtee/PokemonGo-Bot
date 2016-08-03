@@ -63,14 +63,14 @@ class TestCatchRarePokemon(unittest.TestCase):
         self.catch_rare_pokemon.work()
         self.assertEqual(len(self.catch_rare_pokemon.load_saved_catches().keys()), 1)
 
-        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=12)
+        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=13)
         self.catch_rare_pokemon.work()
         self.assertEqual(len(self.catch_rare_pokemon.load_saved_catches().keys()), 2)
 
-        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=12)
+        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=13)
         self.catch_rare_pokemon.work()
         self.assertEqual(len(self.catch_rare_pokemon.load_saved_catches().keys()), 2)
-'''
+
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.action_delay')
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.datetime')
     def test_catchable(self, mock_datetime, action_delay):
@@ -79,17 +79,17 @@ class TestCatchRarePokemon(unittest.TestCase):
         data = self.catch_rare_pokemon.get_reachable_pokemon()
         self.assertIsNotNone(data)
         self.assertEqual(data['dist'], 9115.696871798786)
-        self.assertEqual(data['rare_pokemon']['name'], self.mock_pokemons[0]['name'])
+        self.assertEqual(data['name'], self.mock_pokemons[0]['name'])
 
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.action_delay')
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.datetime')
     def test_too_late_for_first(self, mock_datetime, action_delay):
         action_delay.return_value = 1
-        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=12)
+        mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=13)
         data = self.catch_rare_pokemon.get_reachable_pokemon()
         self.assertIsNotNone(data)
+        self.assertEqual(data['name'], self.mock_pokemons[1]['name'])
         self.assertEqual(data['dist'], 3947.926329796451)
-        self.assertEqual(data['rare_pokemon']['name'], self.mock_pokemons[1]['name'])
 
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.action_delay')
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.datetime')
@@ -98,4 +98,3 @@ class TestCatchRarePokemon(unittest.TestCase):
         mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=24)
         self.assertIsNone(self.catch_rare_pokemon.get_reachable_pokemon())
 
-'''
