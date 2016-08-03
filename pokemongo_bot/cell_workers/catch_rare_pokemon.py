@@ -50,6 +50,8 @@ class CatchRarePokemon(BaseTask):
         hash = {}
         for rare_pokemon in rare_pokemons:
             rare_pokemon['expired_time_object'] = dateutil.parser.parse(rare_pokemon['expire'])
+            if rare_pokemon['expired_time_object'] < datetime.now():
+                continue
 
             position = self.bot.get_pos_by_name(rare_pokemon['location'])
             rare_pokemon['latitude'] = position[0]
@@ -144,19 +146,26 @@ class CatchRarePokemon(BaseTask):
         rare_pokemon = self.get_reachable_pokemon()
         if not (rare_pokemon is None):
             seconds_left_to_catch = rare_pokemon['time_to_dist_in_seconds']
-            logger.log('Will drive for {} to catch {}'
-                       .format(format_time(seconds_left_to_catch), rare_pokemon['name']))
+            unit = self.bot.config.distance_unit
+            logger.log('Will drive {} for {} to catch {} at {}'
+                       .format(format_dist(rare_pokemon['dist'], unit),
+                               format_time(seconds_left_to_catch),
+                               rare_pokemon['name'],
+                               rare_pokemon['location']))
             logger.log('Driving... at {}/km per hours'.format(self.max_speed))
 
             # Improve??? log off and log back in?
             action_delay(seconds_left_to_catch, seconds_left_to_catch + 2)
 
-            logger.log('Arrived at the pokemon - lets catch')
+            logger.log('Arrived at the pokemon - scanning')
             self.bot.api.set_position(rare_pokemon['latitude'], rare_pokemon['longitude'], 0)
             self.bot.heartbeat()
 
             # Update the cell - scan near by for pokemons
             self.bot.get_meta_cell()
+            logger.log('Human delay')
+            action_delay(self.bot.config.action_wait_min, self.bot.config.action_wait_max)
+
             catch_pokemon = CatchVisiblePokemon(
                 self.bot,
                 self.bot.config
