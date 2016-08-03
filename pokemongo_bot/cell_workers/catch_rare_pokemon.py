@@ -74,7 +74,6 @@ class CatchRarePokemon(BaseTask):
         rare_pokemons = hash.values()
         for rare_pokemon in rare_pokemons:
             trimmed_rare_pokemons.append({
-                'id': rare_pokemon['id'],
                 'name': rare_pokemon['name'],
                 'location': rare_pokemon['location'],
                 'expire': rare_pokemon['expire']
