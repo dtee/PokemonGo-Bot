@@ -34,8 +34,10 @@ class CatchRarePokemon(BaseTask):
         self.max_speed = self.config.get("max_speed", 104)
         self.bot_file = self.config.get('bot_file', 'data/rare_pokemons.json')
         self.should_clean = self.config.get('clean_bot_file', True)
+        self.should_return_after = self.config.get('should_return_after', True)
+        self.orig_position = None
 
-    def load_rare_list(self):
+def load_rare_list(self):
         if not os.path.isfile(self.bot_file):
             logger.log('[x] Error loading pokemon locations')
             return []
@@ -153,6 +155,8 @@ class CatchRarePokemon(BaseTask):
                                format_time(seconds_left_to_catch),
                                rare_pokemon['name'],
                                rare_pokemon['location']))
+
+            self.orig_position = self.bot.position
             logger.log('Driving... at {}/km per hours'.format(self.max_speed))
 
             # Improve??? log off and log back in?
@@ -174,6 +178,27 @@ class CatchRarePokemon(BaseTask):
 
             catch_pokemon.work()
             self.update_saved_catches(rare_pokemon)
+
+            # Lets go back to previous location
+            if self.should_return_after and not (self.orig_position is None):
+                logger.log('Driving back to {}... at {}/km per hours'.format(
+                        "{}, {}".format(self.orig_position[0], self.orig_position[1]),
+                        self.max_speed))
+
+                # Improve??? log off and log back in?
+                action_delay(seconds_left_to_catch, seconds_left_to_catch + 2)
+
+                logger.log('Arrived at previous location - scanning')
+                self.bot.api.set_position(
+                        self.orig_position[0],
+                        self.orig_position[0],
+                        0)
+                self.bot.heartbeat()
+
+                # Update the cell - scan near by for pokemons
+                self.bot.get_meta_cell()
+
+
         else:
             logger.log('No rare pokemons to catch')
 
