@@ -60,7 +60,7 @@ class CatchRarePokemon(BaseTask):
             dist = distance(
                     self.bot.position[0],
                     self.bot.position[1],
-                    rare_pokemon['latitude'],
+                    rare_pokemon.get('latitude'),
                     rare_pokemon['longitude']
             )
             seconds_left = (rare_pokemon['expired_time_object'] - datetime.now()).total_seconds()
@@ -79,6 +79,7 @@ class CatchRarePokemon(BaseTask):
         rare_pokemons = hash.values()
         for rare_pokemon in rare_pokemons:
             trimmed_rare_pokemons.append({
+                'pokemon_id': rare_pokemon.get('pokemon_id', -1),
                 'name': rare_pokemon['name'],
                 'location': rare_pokemon['location'],
                 'expire': rare_pokemon['expire']
