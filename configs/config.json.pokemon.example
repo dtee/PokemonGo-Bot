@@ -36,11 +36,12 @@
         "type": "RecycleItems",
         "config": {
           "item_filter": {
-            "Pokeball":       { "keep" : 100 },
-            "Potion":         { "keep" : 10 },
-            "Super Potion":   { "keep" : 20 },
-            "Hyper Potion":   { "keep" : 30 },
-            "Revive":         { "keep" : 30 },
+            "Pokeball":       { "keep" : 40 },
+            "Potion":         { "keep" : 0 },
+            "Super Potion":   { "keep" : 0 },
+            "Hyper Potion":   { "keep" : 15 },
+            "Max Potion":     { "keep" : 75 },
+            "Revive":         { "keep" : 25 },
             "Razz Berry":     { "keep" : 100 }
           }
         }
