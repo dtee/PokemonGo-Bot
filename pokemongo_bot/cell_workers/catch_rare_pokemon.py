@@ -27,16 +27,33 @@ class CatchRarePokemon(BaseTask):
         with open(self.bot_file) as f:
             rare_pokemons = json.load(f)
 
-        # Get Rid of expired pokemons
-        def is_valid(pokemon):
-            expire_time = dateutil.parser.parse(pokemon['expire'])
-            return expire_time > datetime.now()
-
-        # Dedup
+        # Dedup - validate - and process
         hash = {}
         for rare_pokemon in rare_pokemons:
-            key = rare_pokemon['location'] + "-" + rare_pokemon['name']
-            hash[key] = rare_pokemon
+            rare_pokemon['expired_time_object'] = dateutil.parser.parse(rare_pokemon['expire'])
+
+            position = self.bot.get_pos_by_name(rare_pokemon['location'])
+            rare_pokemon['latitude'] = position[0]
+            rare_pokemon['longitude'] = position[1]
+
+            dist = distance(
+                    self.bot.position[0],
+                    self.bot.position[1],
+                    rare_pokemon['latitude'],
+                    rare_pokemon['longitude']
+            )
+            seconds_left = (rare_pokemon['expired_time_object'] - datetime.now()).total_seconds()
+
+            # Time it takes to get to pokemon in seconds
+            time_to_dist_in_seconds = dist / self.max_speed / 1000 * 60 * 60
+            rare_pokemon['dist'] = dist
+            rare_pokemon['time_to_dist_in_seconds'] = time_to_dist_in_seconds
+            rare_pokemon['seconds_left_to_catch'] = seconds_left - time_to_dist_in_seconds
+
+            if seconds_left > 20 :
+                key = rare_pokemon['location'] + "-" + rare_pokemon['name']
+                hash[key] = rare_pokemon
+
         rare_pokemons = hash.values()
 
         # Update file with active pokemons
@@ -44,7 +61,11 @@ class CatchRarePokemon(BaseTask):
             with open(self.bot_file, 'w') as outfile:
                 json.dump(rare_pokemons, outfile)
 
+        # sort by distance - to do catch S rank first
+        rare_pokemons.sort(key=lambda x: x['seconds_left_to_catch'])
+
         return rare_pokemons
+
 
     def save_catch_file(self):
         return 'data/rare-%s.json' % (self.bot.config.username)
@@ -88,53 +109,13 @@ class CatchRarePokemon(BaseTask):
             if (self.had_caught(rare_pokemon)):
                 continue
 
-            unit = self.bot.config.distance_unit  # Unit to use when printing formatted distance
-            position = self.bot.get_pos_by_name(rare_pokemon['location'])
-
-            lat = position[0]
-            lng = position[1]
-            pokemon_name = rare_pokemon['name']
-
-            # dist in meters
-            dist = distance(
-                    self.bot.position[0],
-                    self.bot.position[1],
-                    lat,
-                    lng
-            )
-
-            # Time left to get before pokemon disappears/de-spawn
-            time_left = rare_pokemon['expire']
-            expire_time = dateutil.parser.parse(time_left)
-            seconds_left = (expire_time - datetime.now()).total_seconds()
-
-            # Time it takes to get to pokemon in seconds
-            time_to_dist_in_seconds = dist / self.max_speed / 1000 * 60 * 60
-            seconds_left_to_catch = seconds_left - time_to_dist_in_seconds
-            if seconds_left_to_catch > 20:
-                formatted_dist = format_dist(dist, unit)
-                formatted_time_to_dist = format_time(time_to_dist_in_seconds)
-                logger.log('Can reach pokemon {}, {} in {}'.format(pokemon_name, formatted_dist, formatted_time_to_dist))
-
-                return {
-                    'rare_pokemon': rare_pokemon,
-                    'lat': lat,
-                    'lng': lng,
-                    'dist': dist,
-                    'seconds_left_to_catch': seconds_left_to_catch
-                }
-            else:
-                logger.log('[-] Too late to reach {}'.format(pokemon_name))
-
+            return rare_pokemon
         return None
 
     def work(self):
-        data = self.get_reachable_pokemon()
-        if not (data is None):
-            seconds_left_to_catch = data['seconds_left_to_catch']
-            lat = data['lat']
-            lng = data['lng']
-
+        rare_pokemon = self.get_reachable_pokemon()
+        if not (rare_pokemon is None):
+            seconds_left_to_catch = rare_pokemon['seconds_left_to_catch']
             logger.log('we have more than {} to catch it'.format(format_time(seconds_left_to_catch)))
             logger.log('Sleeping...')
 
@@ -142,8 +123,11 @@ class CatchRarePokemon(BaseTask):
             action_delay(seconds_left_to_catch, seconds_left_to_catch + 2)
 
             logger.log('Arrived at the pokemon. lets wait for a bit - could takes a while to spwan')
-            self.bot.api.set_position(lat, lng, 0)
+            self.bot.api.set_position(rare_pokemon['latitude'], rare_pokemon['longitude'], 0)
             self.bot.heartbeat()
+
+            # Update the cell - scan near by for pokemons
+            self.bot.get_meta_cell()
 
             action_delay(5,10)
             catch_pokemon = CatchVisiblePokemon(
@@ -154,7 +138,7 @@ class CatchRarePokemon(BaseTask):
             catch_pokemon.work()
 
             logger.log('Saved data')
-            self.update_saved_catches(data['rare_pokemon'])
+            self.update_saved_catches(rare_pokemon)
         else:
             logger.log('No rare pokemons to catch')
 
