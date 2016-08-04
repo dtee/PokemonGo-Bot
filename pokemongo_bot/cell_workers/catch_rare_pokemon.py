@@ -37,7 +37,7 @@ class CatchRarePokemon(BaseTask):
         self.should_return_after = self.config.get('should_return_after', True)
         self.orig_position = None
 
-def load_rare_list(self):
+    def load_rare_list(self):
         if not os.path.isfile(self.bot_file):
             logger.log('[x] Error loading pokemon locations')
             return []
