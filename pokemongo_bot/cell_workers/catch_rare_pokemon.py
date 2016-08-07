@@ -30,6 +30,8 @@ Expects data/rare_pokemons.json to have the following format:
 
 
 class CatchRarePokemon(BaseTask):
+    SUPPORTED_TASK_API_VERSION = 1
+    
     def initialize(self):
         self.max_distance = self.config.get("max_distance", 1000)
         self.max_speed = self.config.get("max_speed", 104)
