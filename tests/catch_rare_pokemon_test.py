@@ -51,6 +51,8 @@ class TestCatchRarePokemon(unittest.TestCase):
         self.mock_pokemons = self.catch_rare_pokemon.load_rare_list()
         self.catch_rare_pokemon.reset_saved_catches()
 
+        self.catch_rare_pokemon.emit_event = MagicMock()
+
     def tearDown(self):
         self.patcherSleep.stop()
         self.patcherRandomLat.stop()
@@ -69,7 +71,7 @@ class TestCatchRarePokemon(unittest.TestCase):
 
         mock_datetime.now.return_value = datetime(year=2016, month=8, day=02, hour=1, minute=13)
         self.catch_rare_pokemon.work()
-        self.assertEqual(len(self.catch_rare_pokemon.load_saved_catches().keys()), 2)
+        self.assertEqual(len(self.catch_rare_pokemon.load_saved_catches().keys()), 3)
 
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.action_delay')
     @patch('pokemongo_bot.cell_workers.catch_rare_pokemon.datetime')

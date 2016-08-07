@@ -4,7 +4,6 @@ import os.path
 import dateutil.parser
 
 from datetime import datetime
-from pokemongo_bot import logger
 from pokemongo_bot.worker_result import WorkerResult
 from pokemongo_bot.cell_workers.base_task import BaseTask
 from pokemongo_bot.cell_workers.catch_visible_pokemon import CatchVisiblePokemon
@@ -31,7 +30,7 @@ Expects data/rare_pokemons.json to have the following format:
 
 class CatchRarePokemon(BaseTask):
     SUPPORTED_TASK_API_VERSION = 1
-    
+
     def initialize(self):
         self.max_distance = self.config.get("max_distance", 1000)
         self.max_speed = self.config.get("max_speed", 104)
@@ -39,6 +38,9 @@ class CatchRarePokemon(BaseTask):
         self.should_clean = self.config.get('clean_bot_file', True)
         self.should_return_after = self.config.get('should_return_after', True)
         self.orig_position = None
+
+        # Larpas > Snorlex > Dragonite > Exeggutor > Arcanine > Dratini
+        self.catch_priority = [131,143,149,103,59,147]
 
     def load_rare_list(self):
         if not os.path.isfile(self.bot_file):
@@ -77,6 +79,10 @@ class CatchRarePokemon(BaseTask):
             rare_pokemon['time_to_dist_in_seconds'] = time_to_dist_in_seconds
             rare_pokemon['seconds_left_to_catch'] = seconds_left - time_to_dist_in_seconds
 
+            # Calculate priority based on config
+            rare_pokemon['priority'] = self.catch_priority.index(rare_pokemon['pokemon_id'])
+
+            # Add only if it in catchable distance
             if rare_pokemon['seconds_left_to_catch'] > 20:
                 key = rare_pokemon['location'] + "-" + rare_pokemon['name']
                 hash[key] = rare_pokemon
@@ -97,7 +103,7 @@ class CatchRarePokemon(BaseTask):
                 json.dump(trimmed_rare_pokemons, outfile)
 
         # sort by distance - to do catch S rank first
-        rare_pokemons.sort(key=lambda x: x['seconds_left_to_catch'])
+        rare_pokemons.sort(key=lambda x: (x['priority'], x['seconds_left_to_catch']))
 
         return rare_pokemons
 
