@@ -216,6 +216,19 @@ class PokemonGoBot(object):
                 'iv_display',
             )
         )
+
+        self.event_manager.register_event(
+            'catch_rare_update')
+        self.event_manager.register_event(
+            'found_rare_pokemon',
+            parameters=(
+                'dist',
+                'time',
+                'name',
+                'location',
+            )
+        )
+
         self.event_manager.register_event(
             'pokemon_catch_rate',
             parameters=(
