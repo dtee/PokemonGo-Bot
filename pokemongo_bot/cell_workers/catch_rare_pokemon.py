@@ -27,8 +27,9 @@ Expects data/rare_pokemons.json to have the following format:
 	}
 ]
 '''
-class CatchRarePokemon(BaseTask):
 
+
+class CatchRarePokemon(BaseTask):
     def initialize(self):
         self.max_distance = self.config.get("max_distance", 1000)
         self.max_speed = self.config.get("max_speed", 104)
@@ -39,7 +40,8 @@ class CatchRarePokemon(BaseTask):
 
     def load_rare_list(self):
         if not os.path.isfile(self.bot_file):
-            logger.log('[x] Error loading pokemon locations')
+            self.emit_event('catch_rare_error',
+                formatted='[x] Error loading pokemon locations')
             return []
 
         with open(self.bot_file) as f:
@@ -73,7 +75,7 @@ class CatchRarePokemon(BaseTask):
             rare_pokemon['time_to_dist_in_seconds'] = time_to_dist_in_seconds
             rare_pokemon['seconds_left_to_catch'] = seconds_left - time_to_dist_in_seconds
 
-            if rare_pokemon['seconds_left_to_catch'] > 20 :
+            if rare_pokemon['seconds_left_to_catch'] > 20:
                 key = rare_pokemon['location'] + "-" + rare_pokemon['name']
                 hash[key] = rare_pokemon
 
@@ -97,14 +99,13 @@ class CatchRarePokemon(BaseTask):
 
         return rare_pokemons
 
-
     def save_catch_file(self):
         return 'data/rare-%s.json' % (self.bot.config.username)
 
     def reset_saved_catches(self):
         user_snapshot = self.save_catch_file()
         with open(user_snapshot, 'w') as outfile:
-            json.dump({}, outfile, indent = 2)
+            json.dump({}, outfile, indent=2)
 
     def load_saved_catches(self):
         user_snapshot = self.save_catch_file()
@@ -150,30 +151,35 @@ class CatchRarePokemon(BaseTask):
         if not (rare_pokemon is None):
             seconds_left_to_catch = rare_pokemon['time_to_dist_in_seconds']
             unit = self.bot.config.distance_unit
-            logger.log('Will drive {} for {} to catch {} at {}'
-                       .format(format_dist(rare_pokemon['dist'], unit),
-                               format_time(seconds_left_to_catch),
-                               rare_pokemon['name'],
-                               rare_pokemon['location']))
+
+            result = {
+                'dist': format_dist(rare_pokemon['dist'], unit),
+                'time': format_time(seconds_left_to_catch),
+                'name': rare_pokemon['name'],
+                'location': rare_pokemon['location']
+            }
+
+            self.emit_event(
+                    'found_rare_pokemon',
+                    formatted='Driving {dist} for {time} to catch {name} at {location}',
+                    data=result
+            )
 
             self.orig_position = self.bot.position
-            logger.log('Driving... at {}/km per hours'.format(self.max_speed))
 
             # Improve??? log off and log back in?
             action_delay(seconds_left_to_catch, seconds_left_to_catch + 2)
 
-            logger.log('Arrived at the pokemon - scanning')
             self.bot.api.set_position(rare_pokemon['latitude'], rare_pokemon['longitude'], 0)
             self.bot.heartbeat()
 
             # Update the cell - scan near by for pokemons
             self.bot.get_meta_cell()
-            logger.log('Human delay')
             action_delay(self.bot.config.action_wait_min, self.bot.config.action_wait_max)
 
             catch_pokemon = CatchVisiblePokemon(
-                self.bot,
-                self.bot.config
+                    self.bot,
+                    self.bot.config
             )
 
             catch_pokemon.work()
@@ -181,14 +187,14 @@ class CatchRarePokemon(BaseTask):
 
             # Lets go back to previous location
             if self.should_return_after and not (self.orig_position is None):
-                logger.log('Driving back to {}... at {}/km per hours'.format(
+                msg = 'Driving back to {}... at {}/km per hours'.format(
                         "{}, {}".format(self.orig_position[0], self.orig_position[1]),
-                        self.max_speed))
+                        self.max_speed)
 
-                # Improve??? log off and log back in?
+                self.emit_event('catch_rare_update',
+                                formatted=msg)
                 action_delay(seconds_left_to_catch, seconds_left_to_catch + 2)
 
-                logger.log('Arrived at previous location - scanning')
                 self.bot.api.set_position(
                         self.orig_position[0],
                         self.orig_position[0],
@@ -200,6 +206,7 @@ class CatchRarePokemon(BaseTask):
 
 
         else:
-            logger.log('No rare pokemons to catch')
+            self.emit_event('catch_rare_update',
+                            formatted='No rare pokemons to catch')
 
         return WorkerResult.SUCCESS
