@@ -152,7 +152,7 @@ class SpinFort(BaseTask):
                 self.bot.fort_timeouts[fort["id"]] = fort['cooldown_complete_timestamp_ms']
                 forts.remove(fort)
 
-        forts = filter(lambda x: x["id"] not in self.bot.fort_timeouts, forts)
+        forts = filter(lambda x: 'cooldown_complete_timestamp_ms' not in x, forts)
 
         forts_in_range = []
 
