@@ -17,4 +17,4 @@ def log(msg, color=None):
 
     logger = logging.getLogger('generic')
     logger.info(msg)
-    warnings.warn(message, DeprecationWarning)
+    #warnings.warn(message, DeprecationWarning)
