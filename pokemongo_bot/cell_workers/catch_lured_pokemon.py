@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from pokemongo_bot.base_task import BaseTask
+from pokemongo_bot.worker_result import WorkerResult
 from pokemongo_bot.constants import Constants
 from pokemongo_bot.cell_workers.utils import fort_details, distance
 from pokemongo_bot.cell_workers.pokemon_catch_worker import PokemonCatchWorker
@@ -22,7 +23,7 @@ class CatchLuredPokemon(BaseTask):
         forts = self.bot.get_forts(order_by_distance=True)
 
         if len(forts) == 0:
-            return False
+            return []
 
         for fort in forts:
             distance_to_fort = distance(
@@ -38,10 +39,10 @@ class CatchLuredPokemon(BaseTask):
 
 
         for fort in forts_in_range:
-            details = fort_details(self.bot, fort_id=fort['id'],
-                                  latitude=fort['latitude'],
-                                  longitude=fort['longitude'])
-            fort_name = details.get('name', 'Unknown')
+        details = fort_details(self.bot, fort_id=fort['id'],
+                              latitude=fort['latitude'],
+                              longitude=fort['longitude'])
+        fort_name = details.get('name', 'Unknown')
             encounter_id = fort['lure_info']['encounter_id']
 
             result = {
